@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة الإحصاء المتكاملة - معامل بيرسون وسبيرمان والنزعة المركزية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #2c3e50;
+            --purple: #9b59b6;
+            --teal: #1abc9c;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, var(--secondary), var(--purple));
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 5px;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            white-space: nowrap;
+            margin: 0 5px;
+        }
+        
+        .tab.active {
+            background: white;
+            color: var(--purple);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content {
+            padding: 25px;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-section {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .input-group {
+            margin-bottom: 18px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--secondary);
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .input-row input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-row input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        
+        .btn {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn i {
+            font-size: 16px;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 900px) {
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 22px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .result-title {
+            color: var(--secondary);
+            margin-bottom: 18px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .result-card h3 {
+            color: var(--purple);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+        
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--secondary);
+        }
+        
+        .interpretation {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 22px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            height: 380px;
+        }
+        
+        .explanation {
+            background: #e8f4fc;
+            border-radius: 10px;
+            padding: 22px;
+            margin-top: 25px;
+        }
+        
+        .explanation h3 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .explanation-content {
+            line-height: 1.7;
+            margin-bottom: 18px;
+        }
+        
+        .example {
+            background: #e1f5fe;
+            border-radius: 10px;
+            padding: 18px;
+            margin: 18px 0;
+        }
+        
+        .example h4 {
+            color: #0277bd;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .measures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 18px;
+            margin-top: 18px;
+        }
+        
+        .measure-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .measure-card h4 {
+            color: var(--purple);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .formula {
+            background: #f1f8e9;
+            padding: 8px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 8px 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 18px;
+            background: var(--light);
+            color: var(--dark);
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            .tab-content {
+                padding: 18px;
+            }
+            
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> أداة الإحصاء المتكاملة</h1>
+                <p class="subtitle">معامل بيرسون، سبيرمان، مقاييس النزعة المركزية والانتشار</p>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="pearson">معامل بيرسون</div>
+                    <div class="tab" data-tab="spearman">معامل سبيرمان</div>
+                    <div class="tab" data-tab="central">مقاييس النزعة المركزية</div>
+                    <div class="tab" data-tab="stats">الإحصاءات الوصفية</div>
+                    <div class="tab" data-tab="regression">الانحدار الخطي</div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- معامل بيرسون -->
+        <div class="tab-content active" id="pearson-tab">
+            <div class="input-section">
+                <div class="input-group">
+                    <label>بيانات المتغير X (مثال: 2,4,5,7,8)</label>
+                    <div class="input-row">
+                        <input type="text" id="pearson-x" placeholder="أدخل الأرقام مفصولة بفواصل">
+                        <button class="btn" id="pearson-calc"><i class="fas fa-calculator"></i> حساب معامل بيرسون</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>بيانات المتغير Y (مثال: 3,5,6,8,9)</label>
+                    <div class="input-row">
+                        <input type="text" id="pearson-y" placeholder="أدخل الأرقام مفصولة بفواصل">
+                        <button class="btn btn-danger" id="reset-pearson"><i class="fas fa-redo"></i> إعادة تعيين</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-container">
+                <div class="results">
+                    <h2 class="result-title"><i class="fas fa-calculator"></i> نتائج معامل بيرسون</h2>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <h3>معامل بيرسون</h3>
+                            <div class="result-value" id="pearson-result">0.00</div>
+                            <div class="interpretation" id="pearson-interpretation">أدخل البيانات للحصول على النتيجة</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>معامل التحديد (R²)</h3>
+                            <div class="result-value" id="r-squared">0.00</div>
+                            <div class="interpretation">نسبة التباين المفسرة</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>الانحدار الخطي</h3>
+                            <div class="result-value" id="regression-eq">y = 0x + 0</div>
+                            <div class="interpretation">معادلة خط الانحدار</div>
+                        </div>
+                    </div>
+                    
+                    <div class="explanation">
+                        <h3><i class="fas fa-lightbulb"></i> ما هو معامل ارتباط بيرسون؟</h3>
+                        <div class="explanation-content">
+                            <p>معامل ارتباط بيرسون (Pearson Correlation Coefficient) هو مقياس إحصائي يحدد قوة واتجاه العلاقة الخطية بين متغيرين كميين. تتراوح قيمته بين -1 و1 حيث:</p>
+                            <ul style="padding: 12px; list-style-type: none;">
+                                <li><strong>1</strong>: ارتباط إيجابي تام (زيادة X ترتبط بزيادة Y)</li>
+                                <li><strong>-1</strong>: ارتباط سلبي تام (زيادة X ترتبط بنقصان Y)</li>
+                                <li><strong>0</strong>: لا يوجد ارتباط خطي</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h2 class="result-title"><i class="fas fa-chart-scatter"></i> رسم الانتشار</h2>
+                    <canvas id="pearson-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- معامل سبيرمان -->
+        <div class="tab-content" id="spearman-tab">
+            <div class="input-section">
+                <div class="input-group">
+                    <label>بيانات المتغير X (مثال: 10,20,30,40,50)</label>
+                    <div class="input-row">
+                        <input type="text" id="spearman-x" placeholder="أدخل الأرقام مفصولة بفواصل">
+                        <button class="btn" id="spearman-calc"><i class="fas fa-calculator"></i> حساب معامل سبيرمان</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>بيانات المتغير Y (مثال: 5,15,25,35,45)</label>
+                    <div class="input-row">
+                        <input type="text" id="spearman-y" placeholder="أدخل الأرقام مفصولة بفواصل">
+                        <button class="btn btn-danger" id="reset-spearman"><i class="fas fa-redo"></i> إعادة تعيين</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-container">
+                <div class="results">
+                    <h2 class="result-title"><i class="fas fa-calculator"></i> نتائج معامل سبيرمان</h2>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <h3>معامل سبيرمان</h3>
+                            <div class="result-value" id="spearman-result">0.00</div>
+                            <div class="interpretation" id="spearman-interpretation">أدخل البيانات للحصول على النتيجة</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>الرتبة X</h3>
+                            <div class="result-value" id="spearman-ranks-x">-</div>
+                            <div class="interpretation">رتب المتغير X</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>الرتبة Y</h3>
+                            <div class="result-value" id="spearman-ranks-y">-</div>
+                            <div class="interpretation">رتب المتغير Y</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>الفرق في الرتب</h3>
+                            <div class="result-value" id="spearman-diff">-</div>
+                            <div class="interpretation">مجموع الفروق²</div>
+                        </div>
+                    </div>
+                    
+                    <div class="explanation">
+                        <h3><i class="fas fa-lightbulb"></i> ما هو معامل ارتباط سبيرمان؟</h3>
+                        <div class="explanation-content">
+                            <p>معامل ارتباط سبيرمان (Spearman's Rank Correlation) هو مقياس غير معلمي للارتباط الإحصائي بين متغيرين. يعتمد على رتب القيم بدلاً من القيم الفعلية، مما يجعله مناسباً للبيانات غير الخطية أو عندما لا تتحقق شروط معامل بيرسون.</p>
+                            
+                            <p>يتم حسابه باستخدام الصيغة:</p>
+                            <div class="formula">
+                                ρ = 1 - [6 * Σd² / (n(n² - 1))]
+                            </div>
+                            <p>حيث:</p>
+                            <ul>
+                                <li><strong>d</strong>: الفرق بين رتبتي كل زوج من القيم</li>
+                                <li><strong>n</strong>: عدد الأزواج</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h2 class="result-title"><i class="fas fa-chart-scatter"></i> رسم الانتشار</h2>
+                    <canvas id="spearman-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- مقاييس النزعة المركزية -->
+        <div class="tab-content" id="central-tab">
+            <div class="results">
+                <h2 class="result-title"><i class="fas fa-balance-scale"></i> مقاييس النزعة المركزية</h2>
+                
+                <div class="explanation">
+                    <h3><i class="fas fa-book"></i> شرح مقاييس النزعة المركزية</h3>
+                    <div class="explanation-content">
+                        <p>مقاييس النزعة المركزية (Measures of Central Tendency) هي قيم عددية تهدف إلى وصف مركز مجموعة من البيانات أو تحديد نقطة تجمعها. هذه المقاييس الثلاثة الرئيسية هي:</p>
+                        
+                        <div class="measures-grid">
+                            <div class="measure-card">
+                                <h4><i class="fas fa-calculator"></i> المتوسط الحسابي (Mean)</h4>
+                                <p>مجموع القيم مقسوماً على عددها. وهو المقياس الأكثر استخداماً.</p>
+                                <div class="formula">المتوسط = Σx / n</div>
+                                <p><strong>مثال:</strong> درجات الطلاب: 80, 85, 90, 75, 95<br>المتوسط = (80+85+90+75+95)/5 = 85</p>
+                            </div>
+                            
+                            <div class="measure-card">
+                                <h4><i class="fas fa-sort-amount-up"></i> الوسيط (Median)</h4>
+                                <p>القيمة التي تتوسط القيم عند ترتيبها تصاعدياً. يقاوم القيم المتطرفة.</p>
+                                <div class="formula">القيمة الوسطى بعد الترتيب</div>
+                                <p><strong>مثال:</strong> أعمار مجموعة: 22, 25, 30, 35, 40<br>الوسيط = 30<br>إذا كان العدد زوجياً: 22, 25, 30, 35 → الوسيط = (25+30)/2 = 27.5</p>
+                            </div>
+                            
+                            <div class="measure-card">
+                                <h4><i class="fas fa-flag"></i> المنوال (Mode)</h4>
+                                <p>القيمة الأكثر تكراراً في مجموعة البيانات. يمكن أن يكون هناك أكثر من منوال.</p>
+                                <div class="formula">القيمة ذات التكرار الأعلى</div>
+                                <p><strong>مثال:</strong> أحذية المباعة: 38, 40, 40, 42, 42, 42, 44<br>المنوال = 42 (لأنه الأكثر تكراراً)<br>مجموعة: 10, 20, 20, 30, 30 → المنوالان: 20 و 30</p>
+                            </div>
+                        </div>
+                        
+                        <div class="example">
+                            <h4><i class="fas fa-relationship"></i> العلاقة بين مقاييس النزعة المركزية</h4>
+                            <p>تساعدنا العلاقة بين المتوسط والوسيط والمنوال في فهم توزيع البيانات:</p>
+                            <ul>
+                                <li><strong>توزيع متماثل:</strong> المتوسط = الوسيط = المنوال</li>
+                                <li><strong>توزيع منحرف لليمين (موجب):</strong> المتوسط > الوسيط > المنوال</li>
+                                <li><strong>توزيع منحرف لليسار (سالب):</strong> المتوسط < الوسيط < المنوال</li>
+                            </ul>
+                            <p><strong>مثال عملي:</strong> في بلدة صغيرة، رواتب السكان (بالدولار):<br>
+                            1200, 1500, 1800, 2000, 2200, 2500, 3000, 3500, 4000, 15000<br>
+                            المتوسط = 3500<br>الوسيط = 2350<br>المنوال = لا يوجد<br>
+                            هنا المتوسط > الوسيط مما يشير إلى انحراف موجب بسبب القيمة المتطرفة (15000)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الإحصاءات الوصفية -->
+        <div class="tab-content" id="stats-tab">
+            <div class="input-section">
+                <div class="input-group">
+                    <label>بيانات مجموعة الأرقام (مثال: 12,15,18,22,25)</label>
+                    <div class="input-row">
+                        <input type="text" id="stats-data" placeholder="أدخل الأرقام مفصولة بفواصل">
+                        <button class="btn" id="stats-calc"><i class="fas fa-calculator"></i> حساب الإحصاءات</button>
+                        <button class="btn btn-danger" id="reset-stats"><i class="fas fa-redo"></i> إعادة تعيين</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results">
+                <h2 class="result-title"><i class="fas fa-chart-bar"></i> النتائج الإحصائية</h2>
+                
+                <div class="result-grid">
+                    <div class="result-card">
+                        <h3>المتوسط الحسابي</h3>
+                        <div class="result-value" id="mean">0.00</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>الوسيط</h3>
+                        <div class="result-value" id="median">0.00</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>المنوال</h3>
+                        <div class="result-value" id="mode">0.00</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>التباين</h3>
+                        <div class="result-value" id="variance">0.00</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>الانحراف المعياري</h3>
+                        <div class="result-value" id="std-dev">0.00</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>المدى</h3>
+                        <div class="result-value" id="range">0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الانحدار الخطي -->
+        <div class="tab-content" id="regression-tab">
+            <div class="input-section">
+                <div class="input-group">
+                    <label>بيانات المتغير المستقل X (مثال: 1,2,3,4,5)</label>
+                    <input type="text" id="reg-x" placeholder="أدخل الأرقام مفصولة بفواصل">
+                </div>
+                
+                <div class="input-group">
+                    <label>بيانات المتغير التابع Y (مثال: 2,4,5,4,5)</label>
+                    <div class="input-row">
+                        <input type="text" id="reg-y" placeholder="أدخل الأرقام مفصولة بفواصل">
+                        <button class="btn btn-success" id="reg-calc"><i class="fas fa-calculator"></i> حساب الانحدار</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-container">
+                <div class="results">
+                    <h2 class="result-title"><i class="fas fa-project-diagram"></i> نتائج الانحدار الخطي</h2>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <h3>معادلة الانحدار</h3>
+                            <div class="result-value" id="regression-equation">y = 0x + 0</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>الميل (Slope)</h3>
+                            <div class="result-value" id="slope">0.00</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>التقاطع (Intercept)</h3>
+                            <div class="result-value" id="intercept">0.00</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>معامل التحديد (R²)</h3>
+                            <div class="result-value" id="reg-r2">0.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="explanation" style="margin-top: 20px;">
+                        <h3><i class="fas fa-info-circle"></i> تفسير النتائج</h3>
+                        <p>الانحدار الخطي هو أسلوب إحصائي لنمذجة العلاقة بين متغير تابع (Y) ومتغير مستقل (X) من خلال معادلة خط مستقيم. معادلة الانحدار تأخذ الشكل:</p>
+                        <p style="text-align: center; font-size: 1.2rem; margin: 10px 0;"><strong>Y = bX + a</strong></p>
+                        <p>حيث:</p>
+                        <ul style="padding: 12px; list-style-type: none;">
+                            <li><strong>b</strong>: ميل الخط (التغير في Y لكل تغير وحدة واحدة في X)</li>
+                            <li><strong>a</strong>: الجزء المقطوع من محور Y (قيمة Y عندما X=0)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h2 class="result-title"><i class="fas fa-chart-line"></i> خط الانحدار</h2>
+                    <canvas id="regression-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>برمجة و تصميم محمد حسن جانم من سوريا | أداة الإحصاء المتكاملة</p>
+            <p>معامل بيرسون | معامل سبيرمان | مقاييس النزعة المركزية | الانحدار الخطي</p>
+        </footer>
+    </div>
+    
+    <script>
+        // تحويل نص إلى مصفوفة أرقام
+        function parseData(input) {
+            if (!input) return [];
+            return input.split(',').map(item => parseFloat(item.trim())).filter(num => !isNaN(num));
+        }
+        
+        // حساب معامل بيرسون
+        function calculatePearson(x, y) {
+            if (x.length !== y.length || x.length < 2) return null;
+            
+            const n = x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+            
+            for (let i = 0; i < n; i++) {
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+                sumY2 += y[i] * y[i];
+            }
+            
+            const numerator = n * sumXY - sumX * sumY;
+            const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+            
+            return denominator === 0 ? 0 : numerator / denominator;
+        }
+        
+        // حساب معادلة الانحدار
+        function calculateRegression(x, y) {
+            if (x.length !== y.length || x.length < 2) return null;
+            
+            const n = x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            
+            for (let i = 0; i < n; i++) {
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            return { slope, intercept };
+        }
+        
+        // حساب الرتب
+        function calculateRanks(data) {
+            const sorted = [...data].sort((a, b) => a - b);
+            const ranks = data.map(value => sorted.indexOf(value) + 1);
+            
+            // التعامل مع القيم المتكررة
+            const uniqueValues = [...new Set(sorted)];
+            for (const value of uniqueValues) {
+                const indices = data.map((v, i) => v === value ? i : -1).filter(i => i !== -1);
+                if (indices.length > 1) {
+                    const avgRank = indices.reduce((sum, i) => sum + ranks[i], 0) / indices.length;
+                    indices.forEach(i => ranks[i] = avgRank);
+                }
+            }
+            
+            return ranks;
+        }
+        
+        // حساب معامل سبيرمان
+        function calculateSpearman(x, y) {
+            if (x.length !== y.length || x.length < 2) return null;
+            
+            const n = x.length;
+            const ranksX = calculateRanks(x);
+            const ranksY = calculateRanks(y);
+            
+            let diffSum = 0;
+            for (let i = 0; i < n; i++) {
+                diffSum += Math.pow(ranksX[i] - ranksY[i], 2);
+            }
+            
+            const spearman = 1 - (6 * diffSum) / (n * (Math.pow(n, 2) - 1));
+            return {
+                coefficient: spearman,
+                ranksX: ranksX,
+                ranksY: ranksY,
+                diffSum: diffSum
+            };
+        }
+        
+        // رسم بياني للانتشار
+        function renderScatterChart(ctx, xData, yData, title, regression) {
+            const dataPoints = xData.map((v, i) => ({x: v, y: yData[i]}));
+            
+            // إنشاء بيانات خط الانحدار
+            let regressionData = [];
+            if (regression) {
+                const minX = Math.min(...xData);
+                const maxX = Math.max(...xData);
+                regressionData = [
+                    {x: minX, y: regression.slope * minX + regression.intercept},
+                    {x: maxX, y: regression.slope * maxX + regression.intercept}
+                ];
+            }
+            
+            return new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'بيانات',
+                        data: dataPoints,
+                        backgroundColor: 'rgba(155, 89, 182, 0.7)',
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    },
+                    regression ? {
+                        label: 'خط الانحدار',
+                        data: regressionData,
+                        type: 'line',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0
+                    } : {}]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'المتغير X'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'المتغير Y'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: title
+                        }
+                    }
+                }
+            });
+        }
+        
+        // تفسير معامل الارتباط
+        function interpretCorrelation(r) {
+            const absR = Math.abs(r);
+            if (absR >= 0.9) return "ارتباط قوي جداً";
+            if (absR >= 0.7) return "ارتباط قوي";
+            if (absR >= 0.5) return "ارتباط متوسط";
+            if (absR >= 0.3) return "ارتباط ضعيف";
+            return "ارتباط ضعيف جداً أو معدوم";
+        }
+        
+        // حساب المتوسط
+        function calculateMean(data) {
+            return data.reduce((a, b) => a + b, 0) / data.length;
+        }
+        
+        // حساب الوسيط
+        function calculateMedian(data) {
+            const sorted = [...data].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+        
+        // حساب المنوال
+        function calculateMode(data) {
+            const frequency = {};
+            let maxFreq = 0;
+            let modes = [];
+            
+            data.forEach(num => {
+                frequency[num] = (frequency[num] || 0) + 1;
+                if (frequency[num] > maxFreq) {
+                    maxFreq = frequency[num];
+                    modes = [num];
+                } else if (frequency[num] === maxFreq) {
+                    modes.push(num);
+                }
+            });
+            
+            return modes.length === data.length ? "لا يوجد منوال" : modes.join(", ");
+        }
+        
+        // حساب التباين
+        function calculateVariance(data) {
+            const mean = calculateMean(data);
+            return data.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / data.length;
+        }
+        
+        // حساب الانحراف المعياري
+        function calculateStdDev(data) {
+            return Math.sqrt(calculateVariance(data));
+        }
+        
+        // حساب المدى
+        function calculateRange(data) {
+            return Math.max(...data) - Math.min(...data);
+        }
+        
+        // أحداث الأزرار
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+        
+        // متغيرات للرسوم البيانية
+        let pearsonChart = null;
+        let spearmanChart = null;
+        let regressionChart = null;
+        
+        // معامل بيرسون
+        document.getElementById('pearson-calc').addEventListener('click', () => {
+            const xData = parseData(document.getElementById('pearson-x').value);
+            const yData = parseData(document.getElementById('pearson-y').value);
+            
+            if (xData.length < 2 || yData.length < 2 || xData.length !== yData.length) {
+                alert('الرجاء إدخال مجموعتين من البيانات بنفس الطول (على الأقل نقطتين لكل مجموعة)');
+                return;
+            }
+            
+            const pearson = calculatePearson(xData, yData);
+            const r2 = pearson * pearson;
+            const interpretation = interpretCorrelation(pearson);
+            
+            const regression = calculateRegression(xData, yData);
+            const equation = `y = ${regression.slope.toFixed(2)}x + ${regression.intercept.toFixed(2)}`;
+            
+            document.getElementById('pearson-result').textContent = pearson.toFixed(4);
+            document.getElementById('pearson-interpretation').textContent = interpretation;
+            document.getElementById('r-squared').textContent = r2.toFixed(4);
+            document.getElementById('regression-eq').textContent = equation;
+            
+            // رسم بياني
+            const ctx = document.getElementById('pearson-chart').getContext('2d');
+            if (pearsonChart) pearsonChart.destroy();
+            pearsonChart = renderScatterChart(ctx, xData, yData, 'رسم الانتشار لمعامل بيرسون', regression);
+        });
+        
+        // معامل سبيرمان
+        document.getElementById('spearman-calc').addEventListener('click', () => {
+            const xData = parseData(document.getElementById('spearman-x').value);
+            const yData = parseData(document.getElementById('spearman-y').value);
+            
+            if (xData.length < 2 || yData.length < 2 || xData.length !== yData.length) {
+                alert('الرجاء إدخال مجموعتين من البيانات بنفس الطول (على الأقل نقطتين لكل مجموعة)');
+                return;
+            }
+            
+            const spearman = calculateSpearman(xData, yData);
+            const interpretation = interpretCorrelation(spearman.coefficient);
+            
+            document.getElementById('spearman-result').textContent = spearman.coefficient.toFixed(4);
+            document.getElementById('spearman-interpretation').textContent = interpretation;
+            document.getElementById('spearman-ranks-x').textContent = spearman.ranksX.join(', ');
+            document.getElementById('spearman-ranks-y').textContent = spearman.ranksY.join(', ');
+            document.getElementById('spearman-diff').textContent = spearman.diffSum.toFixed(2);
+            
+            // رسم بياني
+            const ctx = document.getElementById('spearman-chart').getContext('2d');
+            if (spearmanChart) spearmanChart.destroy();
+            spearmanChart = renderScatterChart(ctx, xData, yData, 'رسم الانتشار لمعامل سبيرمان');
+        });
+        
+        // الإحصاءات الوصفية
+        document.getElementById('stats-calc').addEventListener('click', () => {
+            const data = parseData(document.getElementById('stats-data').value);
+            
+            if (data.length < 1) {
+                alert('الرجاء إدخال بيانات صحيحة');
+                return;
+            }
+            
+            document.getElementById('mean').textContent = calculateMean(data).toFixed(4);
+            document.getElementById('median').textContent = calculateMedian(data).toFixed(4);
+            document.getElementById('mode').textContent = calculateMode(data);
+            document.getElementById('variance').textContent = calculateVariance(data).toFixed(4);
+            document.getElementById('std-dev').textContent = calculateStdDev(data).toFixed(4);
+            document.getElementById('range').textContent = calculateRange(data).toFixed(4);
+        });
+        
+        // الانحدار الخطي
+        document.getElementById('reg-calc').addEventListener('click', () => {
+            const xData = parseData(document.getElementById('reg-x').value);
+            const yData = parseData(document.getElementById('reg-y').value);
+            
+            if (xData.length < 2 || yData.length < 2 || xData.length !== yData.length) {
+                alert('الرجاء إدخال مجموعتين من البيانات بنفس الطول (على الأقل نقطتين لكل مجموعة)');
+                return;
+            }
+            
+            const regression = calculateRegression(xData, yData);
+            const pearson = calculatePearson(xData, yData);
+            const r2 = pearson * pearson;
+            
+            document.getElementById('regression-equation').textContent = 
+                `y = ${regression.slope.toFixed(2)}x + ${regression.intercept.toFixed(2)}`;
+            document.getElementById('slope').textContent = regression.slope.toFixed(4);
+            document.getElementById('intercept').textContent = regression.intercept.toFixed(4);
+            document.getElementById('reg-r2').textContent = r2.toFixed(4);
+            
+            // رسم بياني
+            const ctx = document.getElementById('regression-chart').getContext('2d');
+            if (regressionChart) regressionChart.destroy();
+            regressionChart = renderScatterChart(ctx, xData, yData, 'رسم الانحدار الخطي', regression);
+        });
+        
+        // إعادة تعيين
+        document.getElementById('reset-pearson').addEventListener('click', () => {
+            document.getElementById('pearson-x').value = '';
+            document.getElementById('pearson-y').value = '';
+            document.getElementById('pearson-result').textContent = '0.00';
+            document.getElementById('pearson-interpretation').textContent = 'أدخل البيانات للحصول على النتيجة';
+            document.getElementById('r-squared').textContent = '0.00';
+            document.getElementById('regression-eq').textContent = 'y = 0x + 0';
+            
+            if (pearsonChart) {
+                pearsonChart.destroy();
+                pearsonChart = null;
+            }
+        });
+        
+        document.getElementById('reset-spearman').addEventListener('click', () => {
+            document.getElementById('spearman-x').value = '';
+            document.getElementById('spearman-y').value = '';
+            document.getElementById('spearman-result').textContent = '0.00';
+            document.getElementById('spearman-interpretation').textContent = 'أدخل البيانات للحصول على النتيجة';
+            document.getElementById('spearman-ranks-x').textContent = '-';
+            document.getElementById('spearman-ranks-y').textContent = '-';
+            document.getElementById('spearman-diff').textContent = '-';
+            
+            if (spearmanChart) {
+                spearmanChart.destroy();
+                spearmanChart = null;
+            }
+        });
+        
+        document.getElementById('reset-stats').addEventListener('click', () => {
+            document.getElementById('stats-data').value = '';
+            document.getElementById('mean').textContent = '0.00';
+            document.getElementById('median').textContent = '0.00';
+            document.getElementById('mode').textContent = '0.00';
+            document.getElementById('variance').textContent = '0.00';
+            document.getElementById('std-dev').textContent = '0.00';
+            document.getElementById('range').textContent = '0.00';
+        });
+    </script>
+</body>
+</html>
